@@ -16,11 +16,14 @@ function getAfricanCaptials(){
   })
 }
 
+// helper function to convert capitalCities results from API to usable format for googleAPI call parameters
 function coordsToURLStr(capitalCities) {
   let coordsStr = '';
   capitalCities.forEach(function(city) {
     coordsStr+= city.CapitalLatitude + ',' + city.CapitalLongitude + '|';
   })
+
+  // remove the excess '|' from coordsStr
   getElevationsFrom(coordsStr.slice(0, -1))
 }
 
@@ -36,13 +39,15 @@ function getElevationsFrom(coordinates){
 })
 }
 
+
+// helper function to sort elevations from greatest to lowest (descending)
 function sortElevationsDescending(elevations){
   let elevationsDescending = elevations.map(function(data) { return data});
   elevationsDescending.sort(function(a,b) {
     return b - a
   }
 )
-  console.log(elevationsDescending)
+  console.log(elevationsDescending);
   return elevationsDescending;
 }
 
