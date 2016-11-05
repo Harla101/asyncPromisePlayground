@@ -1,16 +1,49 @@
+const request = require('request')
+
 function main() {
-  console.log('hello')
-  getAllCaptials()
-  getElevationsFrom()
+  getAfricanCaptials()
 };
 
 
-function getAllCaptials(){
-  console.log('all capitals')
+function getAfricanCaptials(){
+  request('https://omaze.s3.amazonaws.com/web/common/assets/json/capital_cities.json', function (error, response, body) {
+  if (!error && response.statusCode == 200) {
+    let africanCapitals = JSON.parse(body).filter(function(result){
+      return result.ContinentName==='Africa'
+    })
+    coordsToURLStr(africanCapitals)
+  }
+  })
 }
 
+function coordsToURLStr(capitalCities) {
+  let coordsStr = '';
+  capitalCities.forEach(function(city) {
+    coordsStr+= city.CapitalLatitude + ',' + city.CapitalLongitude + '|';
+  })
+  getElevationsFrom(coordsStr.slice(0, -1))
+}
+
+//API key:AIzaSyA3T7NNeL_dZtEo83tVH36zy_jPVvPuL_Q
 function getElevationsFrom(coordinates){
-  console.log('coordinates')
+  request('https://maps.googleapis.com/maps/api/elevation/json?locations=' + coordinates + '&key=AIzaSyA3T7NNeL_dZtEo83tVH36zy_jPVvPuL_Q', function (error, response, body) {
+  if (!error && response.statusCode == 200) {
+    let elevations = JSON.parse(body).results.map(function(result){
+      return result.elevation
+    })
+    sortElevationsDescending(elevations)
+  }
+})
+}
+
+function sortElevationsDescending(elevations){
+  let elevationsDescending = elevations.map(function(data) { return data});
+  elevationsDescending.sort(function(a,b) {
+    return b - a
+  }
+)
+  console.log(elevationsDescending)
+  return elevationsDescending;
 }
 
 main()
