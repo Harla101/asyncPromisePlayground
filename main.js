@@ -1,5 +1,5 @@
 const request = require('request');
-const Promise = require("bluebird");
+const Promise = require('bluebird');
 
 // helper function to sort elevations from greatest to lowest (descending)
 function sortElevationsDescending(elevations) {
@@ -9,19 +9,22 @@ function sortElevationsDescending(elevations) {
   elevationsDescending.sort(function (a, b) {
     return b - a;
   });
-  console.log(elevationsDescending);
   return elevationsDescending;
 }
 
 // API key:AIzaSyA3T7NNeL_dZtEo83tVH36zy_jPVvPuL_Q
 function getElevationsFrom(coordinates) {
-  request('https://maps.googleapis.com/maps/api/elevation/json?locations=' + coordinates + '&key=AIzaSyA3T7NNeL_dZtEo83tVH36zy_jPVvPuL_Q', function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      const elevations = JSON.parse(body).results.map(function (result) {
-        return result.elevation;
-      });
-      sortElevationsDescending(elevations);
-    }
+  return new Promise(function (resolve, reject) {
+    request('https://maps.googleapis.com/maps/api/elevation/json?locations=' + coordinates + '&key=AIzaSyA3T7NNeL_dZtEo83tVH36zy_jPVvPuL_Q', function (error, response, body) {
+      if (!error && response.statusCode === 200) {
+        const elevations = JSON.parse(body).results.map(function (result) {
+          return result.elevation;
+        });
+        resolve(elevations);
+      } else {
+        reject(error);
+      }
+    });
   });
 }
 
@@ -32,23 +35,43 @@ function coordsToURLStr(capitalCities) {
   capitalCities.forEach(function (city) {
     coordsStr += city.CapitalLatitude + ',' + city.CapitalLongitude + '|';
   });
-  // remove the excess '|' from coordsStr
-  getElevationsFrom(coordsStr.slice(0, -1))
+  // removes the excess '|' from coordsStr
+  return coordsStr.slice(0, -1);
 }
 
 function getAfricanCaptials() {
-  request('https://omaze.s3.amazonaws.com/web/common/assets/json/capital_cities.json', function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      const africanCapitals = JSON.parse(body).filter(function (result) {
-        return result.ContinentName === 'Africa';
-      });
-      coordsToURLStr(africanCapitals)
-    }
+  return new Promise(function (resolve, reject) {
+    request('https://omaze.s3.amazonaws.com/web/common/assets/json/capital_cities.json', function (error, response, body) {
+      if (!error && response.statusCode === 200) {
+        const africanCapitals = JSON.parse(body).filter(function (result) {
+          return result.ContinentName === 'Africa';
+        });
+        resolve(africanCapitals);
+      } else {
+        reject(error);
+      }
+    });
   });
 }
 
+
 function main() {
-  getAfricanCaptials();
+  getAfricanCaptials()
+    .then(function (capitals) {
+      return coordsToURLStr(capitals);
+    })
+    .then(function (URLStr) {
+      return getElevationsFrom(URLStr);
+    })
+    .then(function (elevations) {
+      return sortElevationsDescending(elevations);
+    })
+    .then(function (sortedElevations) {
+      console.log(sortedElevations);
+    })
+    .catch(function (error) {
+      console.log('Error: ', error);
+    });
 }
 
 main();
